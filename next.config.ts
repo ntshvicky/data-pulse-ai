@@ -1,8 +1,13 @@
-import type { NextConfig } from "next";
+// next.config.ts or next.config.js
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  /* config options here */
   reactStrictMode: true,
-};
 
-export default nextConfig;
+  // disable Next.js’s LightningCSS optimizer to avoid the missing .node binary error
+  experimental: {
+    optimizeCss: false,
+  },
+}
+
+export default nextConfig
