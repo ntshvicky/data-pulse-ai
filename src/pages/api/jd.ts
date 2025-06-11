@@ -1,9 +1,4 @@
 // src/api/jd.ts
-// ────────────────────────────────────────────────────────────────────────────────
-// Upload a single Job Description file (PDF/DOCX). Optionally pass a title.
-// Returns { jdId, title, uploadedAt } on success (HTTP 201).
-// ────────────────────────────────────────────────────────────────────────────────
-
 const API_BASE_URL = 'http://3.208.226.16:8000'
 
 export interface JDResponse {
@@ -19,24 +14,24 @@ export interface JDListItem {
   uploadedAt: string
 }
 
+// ——————————————————————————————————————————————————————————————
+// 1) Upload a new JD (your existing function)
+// ——————————————————————————————————————————————————————————————
 export async function uploadJD(
   file: File,
   title?: string
 ): Promise<JDResponse> {
   const formData = new FormData()
   formData.append('file', file)
-  if (title) {
-    formData.append('title', title)
-  }
+  if (title) formData.append('title', title)
 
-  // 1) Read the token from localStorage
-  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null
+  const token =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('accessToken')
+      : null
 
-  // 2) Build headers—only Authorization (no Content-Type, since Browser sets multipart boundaries)
   const headers: HeadersInit = {}
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`
-  }
+  if (token) headers['Authorization'] = `Bearer ${token}`
 
   const resp = await fetch(`${API_BASE_URL}/v1/jds`, {
     method: 'POST',
@@ -49,27 +44,25 @@ export async function uploadJD(
     throw new Error(
       err.detail
         ? Array.isArray(err.detail)
-          ? err.detail.map((d: { msg: unknown }) => d.msg).join(', ')
+          ? err.detail.map((d: any) => d.msg).join(', ')
           : JSON.stringify(err)
-        : err.message || `JD upload failed (status ${resp})`
+        : err.message || `JD upload failed (status ${resp.status})`
     )
   }
 
   return resp.json() as Promise<JDResponse>
 }
 
-
-
-
 // ——————————————————————————————————————————————————————————————
-//  Fetch all JDs for “Search in Database” mode
+// 2) List all JDs (GET /v1/jds)
 // ——————————————————————————————————————————————————————————————
 export async function listJDs(): Promise<JDListItem[]> {
-  const token = typeof window !== 'undefined'
-    ? localStorage.getItem('accessToken')
-    : null
+  const token =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('accessToken')
+      : null
 
-  const headers: HeadersInit = {}
+  const headers: HeadersInit = { Accept: 'application/json' }
   if (token) headers['Authorization'] = `Bearer ${token}`
 
   const resp = await fetch(`${API_BASE_URL}/v1/jds`, {
@@ -77,17 +70,21 @@ export async function listJDs(): Promise<JDListItem[]> {
     headers,
   })
 
-  if (!resp.ok) throw new Error(`Failed to load JDs (${resp.status})`)
+  if (!resp.ok) {
+    throw new Error(`Failed to fetch JD list (status ${resp.status})`)
+  }
+
   return resp.json() as Promise<JDListItem[]>
 }
 
 // ——————————————————————————————————————————————————————————————
-//  Fetch a single JD’s metadata (and title) by id
+// 3) Fetch a specific JD by ID (existing)
 // ——————————————————————————————————————————————————————————————
 export async function getJDById(jdId: string): Promise<JDResponse> {
-  const token = typeof window !== 'undefined'
-    ? localStorage.getItem('accessToken')
-    : null
+  const token =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('accessToken')
+      : null
 
   const headers: HeadersInit = { 'Content-Type': 'application/json' }
   if (token) headers['Authorization'] = `Bearer ${token}`
@@ -96,6 +93,10 @@ export async function getJDById(jdId: string): Promise<JDResponse> {
     method: 'GET',
     headers,
   })
-  if (!resp.ok) throw new Error(`Failed to load JD (${resp.status})`)
+
+  if (!resp.ok) {
+    throw new Error(`Failed to fetch JD (status ${resp.status})`)
+  }
+
   return resp.json() as Promise<JDResponse>
 }

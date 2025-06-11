@@ -13,6 +13,19 @@ export interface CVResponse {
   uploadedAt: string
 }
 
+// ────────────────────────────────────────────────────────────────────────────────
+// Represents one CV record as returned by GET /v1/cvs
+// ────────────────────────────────────────────────────────────────────────────────
+export interface CVListItem {
+  cvId: string
+  fileName: string
+  level: string
+  uploadedAt: string
+}
+
+// ────────────────────────────────────────────────────────────────────────────────
+// 1) Upload a new CV
+// ────────────────────────────────────────────────────────────────────────────────
 export async function uploadCV(
   file: File,
   level: 'jr' | 'mid' | 'sr'
@@ -21,8 +34,10 @@ export async function uploadCV(
   formData.append('file', file)
   formData.append('level', level)
 
-  // Read token
-  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null
+  const token =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('accessToken')
+      : null
 
   const headers: HeadersInit = {}
   if (token) {
@@ -47,4 +62,30 @@ export async function uploadCV(
   }
 
   return resp.json() as Promise<CVResponse>
+}
+
+// ────────────────────────────────────────────────────────────────────────────────
+// 2) List all CVs (GET /v1/cvs)
+// ────────────────────────────────────────────────────────────────────────────────
+export async function listCVs(): Promise<CVListItem[]> {
+  const token =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('accessToken')
+      : null
+
+  const headers: HeadersInit = { 'Accept': 'application/json' }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const resp = await fetch(`${API_BASE_URL}/v1/cvs`, {
+    method: 'GET',
+    headers,
+  })
+
+  if (!resp.ok) {
+    throw new Error(`Failed to fetch CV list (status ${resp.status})`)
+  }
+
+  return resp.json() as Promise<CVListItem[]>
 }
